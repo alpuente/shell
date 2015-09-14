@@ -1,3 +1,5 @@
+// inspired by stephen brennan's shell tutorial
+
 #include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -135,7 +137,6 @@ void loop(void)
     int command_count = 0;
 
     do {
-        //this is a clusterfuck
 
         printf("osh> ");
         line = read_line();
@@ -149,7 +150,6 @@ void loop(void)
             //args = split_line(history[command_count%10]);
             printf("command at %d is %s\n",(command_count%10)-1,history[command_count%10-1]);
             char **temp = split_line(history[command_count%10-1]);
-            //THIS IS WHERE EVERYTHING IS FUCKING UP
             //status = execute(split_line(history[command_count%10-1]));
             printf("split line\n");
             status = execute(temp);
