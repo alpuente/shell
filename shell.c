@@ -1,8 +1,23 @@
+////////////////////////////////
+// Amy Puente                 //
+// CS 426 Assignment 1        //
+// Part B                     //
+////////////////////////////////
+
+/* This program functions as a Linux/Unix shell. Upon running the program,
+the user can enter commands on the command line. The program will then create a 
+child process and execute the command within the child. If the user enters '&' at the end
+of his or her command, the parent and child processes will run concurrently.
+Otherwise, the parent will wait until the child finishes to execute. 
+The user can view the previous 10 commands by entering "history". He or she can execute
+the last command by entering "!!" and the nth command by entering "!n", where n is a positive
+integer. If the user enters "exit", the program will terminate.*/
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <ctype.h>
 
 char *read_input(void)
 {   //read in the input and return it as a string array
@@ -46,7 +61,7 @@ char **split_stuff(char *line, int *amp)
                 exit(EXIT_FAILURE);
             }
         }
-
+        
         word = strtok(NULL, TOK_DELIM);
     }
     input[index] = NULL; // null pointer at end
@@ -88,6 +103,9 @@ int check_input(char **args)
     if (strcmp(args[0],"exit") == 0) {
         return 0;
     }
+    if (!args[0]) {
+        return 0;
+    }
     return 1;
 }
 
@@ -96,8 +114,9 @@ void
 print_history(char **history, int count)
 {
     if (count < 10) {
-
-        for (int i = count-1; i >= 0; i--){
+        
+        int i = 0;
+        for (i = count-1; i >= 0; i--){
             printf(" %d %s\n", i, history[i]);
         }
 
@@ -145,13 +164,18 @@ int main(void)
         //strcpy so that line will stay the same
         strcpy(temp,line);
         args = split_stuff(temp, sw);
-        
-        if (strcmp(args[0], "!!") == 0){ //if !! is entered, repeat the last command
-           
-           strcpy(history[(command_count)%10],history[command_count-1%10]);
-           status = execute(split_stuff(history[command_count%10-1], sw),sw[0]);
-           ++command_count;
-        
+        if (!args[0]) {
+            printf("Please enter a valid command.\n");
+        }
+        else if (strcmp(args[0], "!!") == 0){ //if !! is entered, repeat the last command
+           if (command_count == 0) {
+                printf("No commands in history.\n");
+           } else {
+                strcpy(history[(command_count)%10],history[(command_count-1)%10]);
+                status = execute(split_stuff(history[(command_count-1)%10], sw),sw[0]);
+
+                ++command_count;
+            }
         }
 
         else if (args[0][0] == '!') {
@@ -160,21 +184,37 @@ int main(void)
             int number;
             char *string = args[0];
             char *newstring = string + 1;
-            number = atoi(newstring);
-            
-            if (number > command_count || number < 0) {
-                
-                printf("No such command in history.\n");
-            
+            char spot = newstring[0];
+            int flag = 1;
+            int i = 0;
+            while (spot) {
+                if (!isdigit(spot)) {
+                    flag = 0;
+                }
+                i++;
+                spot = newstring[i];
             }
-            else {
-                //add command back to history and execute it, incrementing command_count
-                number = (number)%10; //mod to access location in history
-                strcpy(history[(command_count+1)%10],history[command_count%10]);
-                status = execute(split_stuff(history[number%10], sw),sw[0]);
-                ++command_count;
+
+            if (flag) {
+                
+                number = atoi(newstring);
+            
+                if (number > command_count || number < 0) {
+                
+                    printf("No such command in history.\n");
             
                 }
+                else {
+                    //add command back to history and execute it, incrementing command_count
+                    number = (number)%10; //mod to access location in history
+                    strcpy(history[(command_count+1)%10],history[command_count%10]);
+                    status = execute(split_stuff(history[number%10], sw),sw[0]);
+                    ++command_count;
+            
+                    }
+            } else {
+                printf("Not a valid command.\n");
+            }
         } 
         else if (strcmp(args[0],"history") == 0) {
             // check if history is empty. if not, print it
